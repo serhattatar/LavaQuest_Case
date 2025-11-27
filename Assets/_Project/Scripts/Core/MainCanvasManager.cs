@@ -13,6 +13,8 @@ public class MainCanvasManager : MonoBehaviour
     [Header("   Please focus evaluation on 'LavaQuest' modules.")]
     [Header("▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀")]
     [Space(20)]
+
+
     [Header("Modules")]
     [SerializeField] private LavaQuestPanelController eventController;
     [SerializeField] private FakeGamePanel gameSimulation;
@@ -32,21 +34,26 @@ public class MainCanvasManager : MonoBehaviour
 
     private void Start()
     {
+        // Initial State
         lavaQuestPopup.Show();
         popupReward.Hide();
         panelEventMap.SetActive(false);
         panelFakeGame.SetActive(false);
         panelMatchmaking.SetActive(false);
 
-        // --- Wiring ---
+        // --- Event Wiring ---
+
+        // Lobby
         lavaQuestPopup.OnStartClicked += OnStartEvent;
         lavaQuestPopup.OnCloseClicked += () =>
         {
-            lavaQuestPopup.Hide();
+            lavaQuestPopup.Hide(() => Debug.Log("Lobby Closed"));
         };
 
+        // Matchmaking
         matchmakingPanel.OnContinueRequested += OnMatchmakingCompleted;
 
+        // Controller
         eventController.OnPlayRequested += () => {
             panelEventMap.SetActive(false);
             panelFakeGame.SetActive(true);
@@ -61,6 +68,7 @@ public class MainCanvasManager : MonoBehaviour
             popupReward.Show();
         };
 
+        // Reward
         popupReward.OnCollectClicked += () => {
             popupReward.Hide(() =>
             {
@@ -69,6 +77,7 @@ public class MainCanvasManager : MonoBehaviour
             });
         };
 
+        // Fake Game
         gameSimulation.OnWinSelected += () => FinishGame(true);
         gameSimulation.OnFailSelected += () => FinishGame(false);
     }

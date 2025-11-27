@@ -3,10 +3,9 @@ using TMPro;
 
 public class LavaQuestHUD : MonoBehaviour
 {
-    [Header("UI Text Elements")]
-    [SerializeField] private TextMeshProUGUI levelText;    // e.g. "Level 1/7"
-    [SerializeField] private TextMeshProUGUI playersText;  // e.g. "Players 90/100"
-    [SerializeField] private TextMeshProUGUI infoText;     // e.g. "Stage Cleared!"
+    [SerializeField] private TextMeshProUGUI levelText;
+    [SerializeField] private TextMeshProUGUI playersText;
+    [SerializeField] private TextMeshProUGUI infoText;
 
     public void UpdateLevelText(int current, int total)
     {

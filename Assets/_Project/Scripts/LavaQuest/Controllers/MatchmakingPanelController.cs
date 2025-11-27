@@ -14,21 +14,25 @@ public class MatchmakingPanelController : MonoBehaviour
     [SerializeField] private Transform avatarPileContainer;
     [SerializeField] private Button btnTapToContinue;
 
-    [Header("Config")]
+    [Header("Timing Config")]
     [SerializeField] private float totalDuration = 3.0f;
-    [SerializeField] private int targetPlayerCount = 100;
+    [SerializeField] private float finishDelay = 0.2f;
 
-    [Header("Layout Settings")]
-    [SerializeField] private float rowHeight = 70f;  // Vertical distance between rows
-    [SerializeField] private float colWidth = 90f;   // Horizontal distance between items
-    [SerializeField] private float randomness = 15f; // Jitter to avoid perfect grid look
-    [SerializeField] private float startYOffset = -200f; // Start position (Bottom of the container)
+    [Header("Population Config")]
+    [SerializeField] private int targetPlayerCount = 100;
+    [SerializeField] private int maxVisualAvatars = 45;
+
+    [Header("Layout Pattern")]
+    [SerializeField] private float rowHeight = 70f;
+    [SerializeField] private float colWidth = 90f;
+    [SerializeField] private float randomness = 15f;
+    [SerializeField] private float startYOffset = -200f;
+
+    // Defines diamond pattern capacity per row
+    private readonly int[] rowCapacityPattern = { 1, 2, 3, 4, 5, 5, 4, 3, 2 };
 
     private ObjectPooler objectPooler;
     private List<AvatarView> spawnedAvatars = new List<AvatarView>();
-
-    // Defines the "Egg/Diamond" shape: Number of avatars per row, from front to back
-    private readonly int[] rowCapacityPattern = { 1, 2, 3, 4, 7, 7, 4, 3, 2,1};
 
     private void Start()
     {
@@ -38,11 +42,8 @@ public class MatchmakingPanelController : MonoBehaviour
     public void Initialize(List<ParticipantData> mockData, ObjectPooler pooler)
     {
         this.objectPooler = pooler;
-
         btnTapToContinue.gameObject.SetActive(false);
-
         CleanupVisuals();
-
         StartCoroutine(RoutineSimulateMatchmaking(mockData));
     }
 
@@ -62,11 +63,12 @@ public class MatchmakingPanelController : MonoBehaviour
         float timer = 0f;
         int visualsSpawned = 0;
 
-        // Calculate max visuals based on our pattern capacity
-        int maxVisuals = 0;
-        foreach (int count in rowCapacityPattern) maxVisuals += count;
-        // Limit data if we have fewer slots than data
-        maxVisuals = Mathf.Min(data.Count, maxVisuals);
+        // Calculate total capacity of our pattern
+        int patternCapacity = 0;
+        foreach (int count in rowCapacityPattern) patternCapacity += count;
+
+        // Ensure we don't spawn more than visually needed
+        int visualsLimit = Mathf.Min(data.Count, Mathf.Min(maxVisualAvatars, patternCapacity));
 
         while (currentCount < targetPlayerCount)
         {
@@ -76,8 +78,7 @@ public class MatchmakingPanelController : MonoBehaviour
             currentCount = Mathf.FloorToInt(Mathf.Lerp(0, targetPlayerCount, progress));
             UpdateCounter(currentCount);
 
-            // Spawn logic
-            int visualsTarget = Mathf.FloorToInt(progress * maxVisuals);
+            int visualsTarget = Mathf.FloorToInt(progress * visualsLimit);
 
             while (visualsTarget > visualsSpawned && visualsSpawned < data.Count)
             {
@@ -89,7 +90,7 @@ public class MatchmakingPanelController : MonoBehaviour
         }
 
         UpdateCounter(targetPlayerCount);
-        yield return new WaitForSeconds(0.2f);
+        yield return new WaitForSeconds(finishDelay);
         btnTapToContinue.gameObject.SetActive(true);
     }
 
@@ -99,38 +100,32 @@ public class MatchmakingPanelController : MonoBehaviour
         avatar.Configure(data);
         avatar.PlayPopAnimation();
 
-        // 1. Calculate Diamond/Egg Position
-        Vector2 targetPos = CalculateEggPosition(visualIndex);
+        Vector2 targetPos = CalculatePatternPosition(visualIndex);
         avatar.SetPosition(targetPos);
 
-        // 2. Random Rotation (Organic feel)
         float randomAngle = UnityEngine.Random.Range(-10f, 10f);
         avatar.transform.localRotation = Quaternion.Euler(0, 0, randomAngle);
 
-        // 3. Layering Logic (Critical for the look)
-        // The first avatar (Player) must be at the FRONT (Last Sibling).
-        // New avatars are behind, so they go to the BACK (First Sibling).
+        // Sorting Logic: Player (0) at Front, others Back
         if (visualIndex == 0)
         {
-            avatar.transform.SetAsLastSibling(); // Front
-            // Optional: Make player slightly bigger
-            avatar.transform.localScale = Vector3.one * 1.2f;
+            avatar.transform.SetAsLastSibling();
+            avatar.transform.localScale = Vector3.one * 1.2f; // Slight highlight
         }
         else
         {
-            avatar.transform.SetAsFirstSibling(); // Behind previous ones
+            avatar.transform.SetAsFirstSibling();
         }
 
         spawnedAvatars.Add(avatar);
     }
 
-    private Vector2 CalculateEggPosition(int index)
+    private Vector2 CalculatePatternPosition(int index)
     {
         int currentRow = 0;
         int itemsInCurrentRow = 0;
         int countConsumed = 0;
 
-        // Find which row this index belongs to
         for (int i = 0; i < rowCapacityPattern.Length; i++)
         {
             if (index < countConsumed + rowCapacityPattern[i])
@@ -142,18 +137,11 @@ public class MatchmakingPanelController : MonoBehaviour
             countConsumed += rowCapacityPattern[i];
         }
 
-        // Index relative to the row (0, 1, 2...)
         int indexInRow = index - countConsumed;
-
-        // Calculate Y (Depth) - Moves UP as rows go back
         float yPos = startYOffset + (currentRow * rowHeight);
-
-        // Calculate X (Width) - Centered
-        // Formula: (Index * Width) - (TotalWidth / 2) + (HalfItemWidth)
         float totalRowWidth = itemsInCurrentRow * colWidth;
         float xPos = (indexInRow * colWidth) - (totalRowWidth / 2f) + (colWidth / 2f);
 
-        // Add Random Jitter for organic look
         xPos += UnityEngine.Random.Range(-randomness, randomness);
         yPos += UnityEngine.Random.Range(-randomness, randomness);
 

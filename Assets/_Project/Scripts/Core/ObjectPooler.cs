@@ -1,12 +1,9 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
 
-/// <summary>
-/// [CORE SYSTEM]
-/// Standard object pooling utility for the main game architecture.
-/// </summary>
 public class ObjectPooler : MonoBehaviour
 {
+    // Singleton used only for Core access, Modules receive reference via DI
     public static ObjectPooler Instance { get; private set; }
 
     [Space(10)]
@@ -15,13 +12,16 @@ public class ObjectPooler : MonoBehaviour
     [Header(" Memory Management Module")]
     [Header("▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀")]
     [Space(20)]
-    [Header("Avatar Config")]
-    [SerializeField] private AvatarView avatarPrefab;
-    [SerializeField] private int avatarPoolSize = 20;
 
-    [Header("VFX Config")]
+
+    [Header("Pool Configuration")]
+    [SerializeField] private AvatarView avatarPrefab;
+    [SerializeField] private int initialPoolSize = 30;
+
+    [Header("VFX Configuration")]
     [SerializeField] private ParticleSystem jumpVfxPrefab;
     [SerializeField] private int vfxPoolSize = 10;
+    [SerializeField] private float vfxZOffset = 0.5f; // Configurable Z-depth
 
     private Queue<AvatarView> avatarQueue = new Queue<AvatarView>();
     private Queue<ParticleSystem> vfxQueue = new Queue<ParticleSystem>();
@@ -36,7 +36,7 @@ public class ObjectPooler : MonoBehaviour
 
     private void InitializePools()
     {
-        for (int i = 0; i < avatarPoolSize; i++)
+        for (int i = 0; i < initialPoolSize; i++)
         {
             AvatarView obj = Instantiate(avatarPrefab, transform);
             obj.gameObject.SetActive(false);
@@ -75,7 +75,8 @@ public class ObjectPooler : MonoBehaviour
 
         ParticleSystem vfx = vfxQueue.Dequeue();
 
-        position.z = 0.5f;
+        // Adjust Z to ensure visibility in front of UI/World objects
+        position.z = vfxZOffset;
 
         vfx.transform.position = position;
         vfx.gameObject.SetActive(true);

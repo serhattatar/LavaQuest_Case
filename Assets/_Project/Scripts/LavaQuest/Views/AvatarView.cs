@@ -10,16 +10,18 @@ public class AvatarView : MonoBehaviour
     [SerializeField] private Image profileImage;
     [SerializeField] private Image frameImage;
 
-    [Header("Animation Settings")]
+    [Header("Animation Timings")]
     [SerializeField] private float jumpDuration = 0.5f;
-    [SerializeField] private float fallDuration = 0.8f; // Increased slightly for the arc
+    [SerializeField] private float fallDuration = 0.8f;
+    [SerializeField] private float popDuration = 0.3f;
 
-    // Determines how high the avatar "hops" before plummeting down during a fall
+    [Header("Physics & Juice")]
+    [SerializeField] private float jumpHeight = 200f;
     [SerializeField] private float fallHopHeight = 250f;
 
     [Header("Curves")]
-    [SerializeField] private AnimationCurve jumpCurve; // Bell curve (0 -> 1 -> 0)
-    [SerializeField] private AnimationCurve fallCurve; // EaseIn (Acceleration)
+    [SerializeField] private AnimationCurve jumpCurve;
+    [SerializeField] private AnimationCurve fallCurve;
     [SerializeField] private AnimationCurve popCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
 
     public event Action<Vector3> OnLanded;
@@ -57,7 +59,6 @@ public class AvatarView : MonoBehaviour
 
         rectTransform.anchoredPosition = pendingTargetPos;
         rectTransform.rotation = Quaternion.identity;
-
         currentAnimationRoutine = null;
     }
 
@@ -84,11 +85,10 @@ public class AvatarView : MonoBehaviour
     {
         transform.localScale = Vector3.zero;
         float t = 0;
-        float duration = 0.3f;
 
         while (t < 1f)
         {
-            t += Time.deltaTime / duration;
+            t += Time.deltaTime / popDuration;
             float scale = popCurve.Evaluate(t);
             transform.localScale = Vector3.one * scale;
             yield return null;
@@ -108,11 +108,8 @@ public class AvatarView : MonoBehaviour
             t += Time.deltaTime / jumpDuration;
             float clampedT = Mathf.Clamp01(t);
 
-            // Linear move for base position
             Vector2 currentPos = Vector2.Lerp(start, target, clampedT);
-
-            // Add Arc Height (Up and Down)
-            currentPos.y += jumpCurve.Evaluate(clampedT) * 200f;
+            currentPos.y += jumpCurve.Evaluate(clampedT) * jumpHeight;
 
             rectTransform.anchoredPosition = currentPos;
             yield return null;
@@ -128,11 +125,8 @@ public class AvatarView : MonoBehaviour
         if (delay > 0) yield return new WaitForSeconds(delay);
 
         Vector2 start = rectTransform.anchoredPosition;
-
-        // We capture the starting Y because we want to animate relative to it first
         float startY = start.y;
         float targetY = target.y;
-
         float t = 0f;
 
         while (t < 1f)
@@ -140,26 +134,15 @@ public class AvatarView : MonoBehaviour
             t += Time.deltaTime / fallDuration;
             float clampedT = Mathf.Clamp01(t);
 
-            // 1. Horizontal Movement: Move linearly towards the "Forward" X of the target
             float currentX = Mathf.Lerp(start.x, target.x, clampedT);
 
-            // 2. Vertical Movement: Complex Blend
-            // Part A: Try to jump up using the JumpCurve (First 50% of animation mainly)
-            // Part B: Drag down using the FallCurve (Gravity)
-
-            // Calculate gravity drop: Interpolate from StartY down to TargetY
-            // We use FallCurve to make it start slow (hang time) and end fast
+            // Vertical: Gravity + Hop blend
             float gravityY = Mathf.LerpUnclamped(startY, targetY, fallCurve.Evaluate(clampedT));
-
-            // Calculate hop up: Uses JumpCurve to add height relative to the current gravity drop
-            // We fade out the hop influence as T increases so it doesn't jerk at the end
             float hopY = jumpCurve.Evaluate(clampedT) * fallHopHeight;
 
             Vector2 currentPos = new Vector2(currentX, gravityY + hopY);
-
             rectTransform.anchoredPosition = currentPos;
 
-            // Spin Effect
             rectTransform.rotation = Quaternion.Euler(0, 0, clampedT * 90f);
 
             yield return null;

@@ -4,11 +4,14 @@ using UnityEngine.EventSystems;
 
 public class SimpleButtonTween : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
 {
+    [Header("Settings")]
     [SerializeField] private float pressScale = 0.9f;
     [SerializeField] private float duration = 0.1f;
+
     private Vector3 originalScale;
 
     private void Awake() => originalScale = transform.localScale;
+
     private void OnDisable()
     {
         StopAllCoroutines();

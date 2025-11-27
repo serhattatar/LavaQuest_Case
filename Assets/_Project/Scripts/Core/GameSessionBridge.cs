@@ -20,7 +20,8 @@ public class GameSessionBridge : MonoBehaviour
     [Header("   Simulates server/player data.")]
     [Header("▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀▄▀")]
     [Space(20)]
-    [Header("Mock Settings")]
+   
+    [Header("Mock Data Assets")]
     [SerializeField] private List<Sprite> botAvatarSpritePool;
     [SerializeField] private List<Sprite> botAvatarFrameSpritePool;
 
@@ -34,6 +35,7 @@ public class GameSessionBridge : MonoBehaviour
     {
         var list = new List<ParticipantData>();
 
+        // Main Player
         list.Add(new ParticipantData
         {
             UserId = "local_player",
@@ -41,6 +43,7 @@ public class GameSessionBridge : MonoBehaviour
             IsMainPlayer = true
         });
 
+        // Bots
         for (int i = 0; i < totalCount - 1; i++)
         {
             list.Add(new ParticipantData
@@ -58,7 +61,6 @@ public class GameSessionBridge : MonoBehaviour
 
     public void NotifyGameResult(bool isWin)
     {
-        Debug.Log($"[CoreGame] Match-3 Finished. Result: {(isWin ? "WIN" : "FAIL")}");
         OnMiniGameFinished?.Invoke(isWin);
     }
 
