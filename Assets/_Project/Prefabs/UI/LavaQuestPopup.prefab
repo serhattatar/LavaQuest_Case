@@ -963,7 +963,7 @@ GameObject:
   - component: {fileID: 8774053160988102827}
   - component: {fileID: 8209673291021441277}
   m_Layer: 0
-  m_Name: Lava_Quest_PopUp
+  m_Name: LavaQuestPopup
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1046,8 +1046,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 82004d043e1b5a74883a60935779c8d7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  btnStart: {fileID: 3342888871553255812}
-  btnClose: {fileID: 7182456687506010690}
   animDuration: 1
   showCurve:
     serializedVersion: 2
@@ -1115,6 +1113,8 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+  btnStart: {fileID: 3342888871553255812}
+  btnClose: {fileID: 7182456687506010690}
 --- !u!114 &8209673291021441277
 MonoBehaviour:
   m_ObjectHideFlags: 0

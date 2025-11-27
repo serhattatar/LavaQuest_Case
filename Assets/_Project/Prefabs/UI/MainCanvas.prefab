@@ -291,7 +291,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2081923447595566426, guid: 67f3ec785a1ffd74ca2f44e695946ebe, type: 3}
       propertyPath: m_Name
-      value: Lava_Quest_Popup
+      value: LavaQuestRewardPopup
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -650,7 +650,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7881708963007579821, guid: 0c05e766e0a5cc04ca22feb2065a2bba, type: 3}
       propertyPath: m_Name
-      value: Reward_Popup
+      value: LavaQuestRewardPopup
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
