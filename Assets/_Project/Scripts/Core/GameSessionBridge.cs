@@ -25,6 +25,8 @@ public class GameSessionBridge : MonoBehaviour
     [SerializeField] private List<Sprite> botAvatarSpritePool;
     [SerializeField] private List<Sprite> botAvatarFrameSpritePool;
 
+    private System.DateTime? _fixedEventEndTime;
+
     private void Awake()
     {
         if (Instance == null) Instance = this;
@@ -68,5 +70,15 @@ public class GameSessionBridge : MonoBehaviour
     {
         if (spriteList == null || spriteList.Count == 0) return null;
         return spriteList[Random.Range(0, spriteList.Count)];
+    }
+
+    public System.DateTime GetEventEndTime()
+    {
+        if (_fixedEventEndTime == null)
+        {
+            _fixedEventEndTime = System.DateTime.Now.AddHours(23).AddMinutes(59).AddSeconds(59);
+        }
+
+        return _fixedEventEndTime.Value;
     }
 }

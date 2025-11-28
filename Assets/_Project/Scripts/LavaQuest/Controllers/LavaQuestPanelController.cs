@@ -7,7 +7,7 @@ public class LavaQuestPanelController : MonoBehaviour
 {
     public System.Action OnPlayRequested;
     public System.Action OnRestartRequested;
-    public System.Action OnQuestCompleted;
+    public System.Action<List<ParticipantData>> OnQuestCompleted;
 
     [Header("References")]
     [SerializeField] private LavaQuestHUD hudController;
@@ -17,11 +17,11 @@ public class LavaQuestPanelController : MonoBehaviour
 
     [Header("Configuration")]
     [SerializeField] private float stepRadius = 80f;
-    [SerializeField] private float dropDistance = 3000f; // Distance to fall
+    [SerializeField] private float dropDistance = 3000f; 
     [SerializeField] private float scrollSpeed = 2f;
 
     [Header("Animation Timings")]
-    [SerializeField] private float animationDelay = 0.6f; // Delay between Winners/Losers anims
+    [SerializeField] private float animationDelay = 0.6f; 
     [SerializeField] private float roundEndDelay = 0.5f;
     [SerializeField] private float winDelay = 1.5f;
     [SerializeField] private float failDelay = 2.0f;
@@ -33,9 +33,29 @@ public class LavaQuestPanelController : MonoBehaviour
     private int totalParticipants = 0;
     private bool isRoundInProgress = false;
 
+    private Coroutine timerCoroutine;
+    private System.DateTime cachedEndTime;
+    private bool isInitialized = false;
+
     private void Start()
     {
         btnPlayAction.onClick.AddListener(HandlePlayClick);
+    }
+    private void OnEnable()
+    {
+        if (isInitialized)
+        {
+            StartTimer();
+        }
+    }
+
+    private void OnDisable()
+    {
+        if (timerCoroutine != null)
+        {
+            StopCoroutine(timerCoroutine);
+            timerCoroutine = null;
+        }
     }
 
     private void HandlePlayClick()
@@ -59,6 +79,10 @@ public class LavaQuestPanelController : MonoBehaviour
         SpawnAvatars(participants);
         UpdateHUD("Beat 8 Levels to complete the challange!");
 
+
+        cachedEndTime = GameSessionBridge.Instance.GetEventEndTime();
+        isInitialized = true;
+        StartTimer();
     }
 
     private void ForceStopAllAvatars()
@@ -110,96 +134,184 @@ public class LavaQuestPanelController : MonoBehaviour
     {
         objectPooler.PlayVFX(worldPos);
     }
-
+    
     public void ExecuteRoundLogic(bool playerWon)
     {
         if (isRoundInProgress) return;
         StartCoroutine(ProcessRoundRoutine(playerWon));
     }
 
+    /// <summary>
+    /// Orchestrates the entire flow of a game round: Logic -> Animation -> Result.
+    /// </summary>
     private IEnumerator ProcessRoundRoutine(bool playerWon)
     {
         isRoundInProgress = true;
         SetPlayButtonState(false);
 
-        List<AvatarView> winners = new List<AvatarView>();
-        List<AvatarView> losers = new List<AvatarView>();
+        // 1. LOGIC: Determine who passes and who fails
+        DetermineRoundOutcomes(playerWon, out List<AvatarView> winners, out List<AvatarView> losers);
+
+        // 2. UI: Update HUD based on the main player's result
+        UpdateRoundHUD(playerWon, winners.Count);
+        // 3. ANIMATION: Winners Jump
+        PlayJumpAnimations(winners);
+
+        // Wait before losers fall (only if there were winners jumping)
+        if (winners.Count > 0)
+            yield return new WaitForSeconds(animationDelay);
+
+        // 4. ANIMATION: Losers Fall & Data Update
+        PlayEliminationAnimations(losers);
+
+        // 5. FLOW: Handle Level Progression or Failure
+        if (playerWon)
+        {
+            // Move logic index to next step
+            currentStepIndex++;
+            yield return StartCoroutine(HandleWinProgression(winners));
+        }
+        else
+        {
+            yield return StartCoroutine(HandleFailure());
+        }
+    }
+
+    private void DetermineRoundOutcomes(bool playerWon, out List<AvatarView> winners, out List<AvatarView> losers)
+    {
+        winners = new List<AvatarView>();
+        losers = new List<AvatarView>();
 
         foreach (var avatar in activeAvatars)
         {
             if (avatar.Data.IsEliminated) continue;
 
+            // Logic: Main player outcome is fixed, bots have random chance
             bool passed = avatar.Data.IsMainPlayer ? playerWon : Random.value > 0.3f;
 
+            // Safety Check: Can't advance beyond the final step
             if (passed && currentStepIndex < stepAnchoredPositions.Count - 1)
+            {
                 winners.Add(avatar);
+            }
             else
+            {
                 losers.Add(avatar);
+            }
         }
+    }
 
-        if (playerWon)
-        {
-            UpdateHUD("Congratulations! You Advanced to the next step!");           
-        }
-        else
-        {
-            UpdateHUD("You Failed The Challange.");
-        }
+    private void PlayJumpAnimations(List<AvatarView> winners)
+    {
+        int nextStepIndex = currentStepIndex + 1;
 
-        // --- WINNERS ---
         foreach (var w in winners)
         {
-            Vector2 target = GetRandomPos(currentStepIndex + 1);
+            Vector2 target = GetRandomPos(nextStepIndex);
             w.PlayJump(target, Random.Range(0f, 0.4f));
         }
+    }
 
-        if (winners.Count > 0) yield return new WaitForSeconds(animationDelay);
+    private void PlayEliminationAnimations(List<AvatarView> losers)
+    {
+        // Determine where losers should fall from (current or next step visual center)
+        Vector2 dropOriginCenter;
+        if (currentStepIndex + 1 < stepAnchoredPositions.Count)
+            dropOriginCenter = stepAnchoredPositions[currentStepIndex + 1];
+        else
+            dropOriginCenter = stepAnchoredPositions[currentStepIndex];
 
-        // --- LOSERS (Fall Forward Logic) ---
         foreach (var l in losers)
         {
+            // CRITICAL: Mark as eliminated in data
             l.Data.IsEliminated = true;
 
-            // Calculate target: Forward X (next step), Deep Down Y
-            Vector2 nextStepCenter;
-            if (currentStepIndex + 1 < stepAnchoredPositions.Count)
-                nextStepCenter = stepAnchoredPositions[currentStepIndex + 1];
-            else
-                nextStepCenter = stepAnchoredPositions[currentStepIndex];
-
+            // Calculate Fall Target
             float randomXOffset = Random.Range(-stepRadius, stepRadius);
-            Vector2 dropTarget = new Vector2(nextStepCenter.x + randomXOffset, nextStepCenter.y - dropDistance);
+            Vector2 dropTarget = new Vector2(dropOriginCenter.x + randomXOffset, dropOriginCenter.y - dropDistance);
 
             l.PlayFall(dropTarget, Random.Range(0f, 0.4f));
         }
+    }
 
-        // --- ROUND RESULT ---
+    private void UpdateRoundHUD(bool playerWon, int predictedSurvivorCount)
+    {
         if (playerWon)
-        {
-            currentStepIndex++;
+            UpdateHUD("Congratulations! You Advanced to the next step!");
+        else
+            UpdateHUD("You Failed The Challenge.");
 
-            if (currentStepIndex >= stepAnchoredPositions.Count - 1)
+        // Update survivor count immediately for feedback
+        if (hudController)
+            hudController.UpdatePlayersText(predictedSurvivorCount, totalParticipants);
+    }
+
+    // -------------------------------------------------------------------------
+    // FLOW HANDLERS
+    // -------------------------------------------------------------------------
+
+    private IEnumerator HandleWinProgression(List<AvatarView> currentRoundWinners)
+    {
+        // Check if this was the final step
+        if (currentStepIndex >= stepAnchoredPositions.Count - 1)
+        {
+            // FINAL VICTORY
+            yield return new WaitForSeconds(winDelay);
+
+            // Create final data list from the VISUAL winners to ensure consistency
+            List<ParticipantData> finalWinnersData = new List<ParticipantData>();
+            foreach (var w in currentRoundWinners)
             {
-                // Final Step Reached
-                yield return new WaitForSeconds(winDelay);
-                OnQuestCompleted?.Invoke();
+                finalWinnersData.Add(w.Data);
             }
-            else
-            {
-                yield return new WaitForSeconds(roundEndDelay);
-                isRoundInProgress = false;
-                SetPlayButtonState(true);
-            }
+
+            OnQuestCompleted?.Invoke(finalWinnersData);
         }
         else
         {
-            yield return new WaitForSeconds(failDelay);
-            OnRestartRequested?.Invoke();
+            // NEXT ROUND PREPARATION
+            yield return new WaitForSeconds(roundEndDelay);
+            isRoundInProgress = false;
+            SetPlayButtonState(true);
         }
+    }
 
-        int survivors = 0;
-        foreach (var a in activeAvatars) if (!a.Data.IsEliminated) survivors++;
-        if (hudController) hudController.UpdatePlayersText(survivors, totalParticipants);
+    private IEnumerator HandleFailure()
+    {
+        yield return new WaitForSeconds(failDelay);
+        OnRestartRequested?.Invoke();
+    }
+
+    private void StartTimer()
+    {
+        if (timerCoroutine != null) StopCoroutine(timerCoroutine);
+
+        timerCoroutine = StartCoroutine(RoutineEventTimer(cachedEndTime));
+    }
+
+    private IEnumerator RoutineEventTimer(System.DateTime targetEndTime)
+    {
+        var waitForOneSecond = new WaitForSeconds(1f);
+
+        while (true)
+        {
+            System.TimeSpan remaining = targetEndTime - System.DateTime.Now;
+
+            if (remaining.TotalSeconds <= 0)
+            {
+                hudController.SetClockMessage("00:00:00");
+                yield break; 
+            }
+
+            string timeStr = string.Format("{0:D2}:{1:D2}:{2:D2}",
+                remaining.Hours,
+                remaining.Minutes,
+                remaining.Seconds);
+
+            hudController.SetClockMessage(timeStr);
+
+            yield return waitForOneSecond;
+        }
     }
 
     private Vector2 GetRandomPos(int idx)
