@@ -291,7 +291,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2081923447595566426, guid: 67f3ec785a1ffd74ca2f44e695946ebe, type: 3}
       propertyPath: m_Name
-      value: Lava_Quest_Popup
+      value: LavaQuestPopup
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -482,10 +482,6 @@ PrefabInstance:
       propertyPath: m_Name
       value: LobbyMainMenu
       objectReference: {fileID: 0}
-    - target: {fileID: 5542718508349783109, guid: 28e98501229fed943b4d8829de25d08f, type: 3}
-      propertyPath: m_IsActive
-      value: 1
-      objectReference: {fileID: 0}
     - target: {fileID: 5542718508439193110, guid: 28e98501229fed943b4d8829de25d08f, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0
@@ -594,11 +590,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6525014312312746047, guid: 0c05e766e0a5cc04ca22feb2065a2bba, type: 3}
       propertyPath: m_SizeDelta.x
-      value: 697.3
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6525014312312746047, guid: 0c05e766e0a5cc04ca22feb2065a2bba, type: 3}
       propertyPath: m_SizeDelta.y
-      value: 1000.5
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6525014312312746047, guid: 0c05e766e0a5cc04ca22feb2065a2bba, type: 3}
       propertyPath: m_LocalPosition.x
@@ -650,7 +646,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7881708963007579821, guid: 0c05e766e0a5cc04ca22feb2065a2bba, type: 3}
       propertyPath: m_Name
-      value: Reward_Popup
+      value: LavaQuestRewardPopup
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -764,10 +760,6 @@ PrefabInstance:
     - target: {fileID: 1791573037911365058, guid: 9f0fb34007909dc428286dcfbf42a802, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7951332330696588881, guid: 9f0fb34007909dc428286dcfbf42a802, type: 3}
-      propertyPath: totalDuration
-      value: 5
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -925,10 +917,6 @@ PrefabInstance:
       propertyPath: m_Name
       value: Panel_EventMap
       objectReference: {fileID: 0}
-    - target: {fileID: 1530244540259090968, guid: 9d7cbb96610a73743a2861d851aa3934, type: 3}
-      propertyPath: m_IsActive
-      value: 0
-      objectReference: {fileID: 0}
     - target: {fileID: 6127172035777184817, guid: 9d7cbb96610a73743a2861d851aa3934, type: 3}
       propertyPath: m_Pivot.x
       value: 0.5
@@ -1008,10 +996,6 @@ PrefabInstance:
     - target: {fileID: 6127172035777184817, guid: 9d7cbb96610a73743a2861d851aa3934, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 7477354393404021752, guid: 9d7cbb96610a73743a2861d851aa3934, type: 3}
-      propertyPath: m_SizeDelta.y
-      value: 3117.463
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

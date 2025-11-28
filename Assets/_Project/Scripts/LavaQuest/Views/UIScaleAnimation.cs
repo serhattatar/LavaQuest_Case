@@ -9,6 +9,7 @@ using UnityEngine;
 public abstract class UIScaleAnimation : MonoBehaviour
 {
     [Header("Base Animation Config")]
+    [SerializeField] protected Transform animTransform;
     [SerializeField] protected float animDuration = 0.3f;
     [SerializeField] protected AnimationCurve showCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
     [SerializeField] protected AnimationCurve hideCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
@@ -16,7 +17,7 @@ public abstract class UIScaleAnimation : MonoBehaviour
     public virtual void Show()
     {
         gameObject.SetActive(true);
-        transform.localScale = Vector3.zero;
+        animTransform.localScale = Vector3.zero;
         StopAllCoroutines();
         StartCoroutine(AnimateScale(Vector3.one, showCurve, null));
     }
@@ -40,18 +41,18 @@ public abstract class UIScaleAnimation : MonoBehaviour
 
     protected IEnumerator AnimateScale(Vector3 target, AnimationCurve curve, Action onComplete)
     {
-        Vector3 start = transform.localScale;
+        Vector3 start = animTransform.localScale;
         float t = 0;
 
         while (t < 1f)
         {
             t += Time.deltaTime / animDuration;
             float curveValue = curve.Evaluate(t);
-            transform.localScale = Vector3.LerpUnclamped(start, target, curveValue);
+            animTransform.localScale = Vector3.LerpUnclamped(start, target, curveValue);
             yield return null;
         }
 
-        transform.localScale = target;
+        animTransform.localScale = target;
         onComplete?.Invoke();
     }
 }

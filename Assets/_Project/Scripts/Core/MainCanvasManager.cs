@@ -64,7 +64,8 @@ public class MainCanvasManager : MonoBehaviour
             lavaQuestPopup.Show();
         };
 
-        eventController.OnQuestCompleted += () => {
+        eventController.OnQuestCompleted += (winnersList) => {
+            popupReward.Initialize(winnersList, objectPooler);
             popupReward.Show();
         };
 
